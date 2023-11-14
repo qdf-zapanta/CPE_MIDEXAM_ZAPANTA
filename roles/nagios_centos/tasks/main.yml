@@ -1,0 +1,79 @@
+- name: Installing Nagios dependencies and libraries
+  tags: dependencies, libraries
+  yum:
+    name:
+      - gcc
+      - glibc
+      - glibc-common
+      - perl
+      - httpd
+      - php
+      - wget
+      - gd
+      - gd-devel
+      - openssl-devel
+      - make
+      - gettext
+      - automake
+      - autoconf
+      - net-snmp
+      - net-snmp-utils
+      - python2-pip
+    state: latest
+
+- name: Install passlib python package
+  pip:
+    name: passlib
+
+- name: Creating a directory for Nagios
+  file:
+    path: ~/nagios
+    state: directory
+
+- name: Downloading and extracting Nagios
+  unarchive:
+    src: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.6.tar.gz
+    dest: ~/nagios
+    remote_src: yes
+    mode: 0777
+    owner: root
+    group: root
+
+- name: Compiling, installing, and configuring Nagios
+  shell: |
+    cd ~/nagios/nagioscore-**
+    ./configure
+    make all
+    make install-groups-users
+    usermod -a -G nagios apache
+    make install
+    make install-daemoninit
+    make install-commandmode
+    make install-config
+    make install-webconf
+
+- name: Downloading and extracting Nagios plugins
+  unarchive:
+    src: https://github.com/nagios-plugins/nagios-plugins/archive/release-2.3.3.tar.gz
+    dest: ~/nagios
+    remote_src: yes
+    mode: 0777
+    owner: root
+    group: root
+
+- name: Compiling and installing Nagios plugins
+  shell: |
+    cd ~/nagios/nagios-plugins*
+    ./tools/setup
+    ./configure
+    make
+    make install
+
+- name: Making sure that Nagios and Apache are started and enabled
+  service:
+    name: "{{ item }}"
+    state: restarted
+    enabled: true
+  loop:
+    - nagios
+    - httpd

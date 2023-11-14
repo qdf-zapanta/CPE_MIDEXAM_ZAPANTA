@@ -1,0 +1,89 @@
+---
+- name: Downloading the source file of Elasticsearch for CentOS
+  tags: es_centos
+  when: ansible_facts['distribution'] == 'CentOS'
+  get_url:
+    url: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.4.3-x86_64.rpm
+    dest: /tmp/elasticsearch-8.4.3-x86_64.rpm
+
+- name: Installing Elasticsearch on CentOS
+  become: true
+  tags: es_centos
+  ansible.builtin.yum:
+    name: /tmp/elasticsearch-8.4.3-x86_64.rpm
+    state: present
+  when: ansible_facts['distribution'] == 'CentOS'
+
+- name: Enabling Elasticsearch service on CentOS
+  tags: es_centos
+  ansible.builtin.service:
+    name: elasticsearch
+    enabled: yes
+  when: ansible_facts['distribution'] == 'CentOS'
+
+- name: Importing GPG key for Elasticsearch
+  tags: logstash_centos
+  shell: rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+- name: Configuring Logstash repository
+  tags: logstash_centos
+  copy:
+    src: logstash.repo
+    dest: /etc/yum.repos.d/logstash.repo
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Installing Logstash
+  tags: logstash_centos
+  yum:
+    name: logstash
+    state: latest
+
+- name: Configuring firewall for Logstash
+  tags: logstash_centos, elk_install
+  shell: |
+    sudo firewall-cmd --permanent --zone=public --add-port=9600/tcp
+    sleep 10
+    sudo firewall-cmd --reload
+
+- name: Managing Logstash service
+  tags: logstash_centos, service, logstash_service, elk_service
+  service:
+    name: logstash
+    state: restarted
+    enabled: true
+
+# ------- KIBANA -------
+- name: Importing GPG key for Elasticsearch
+  tags: kibana_centos
+  shell: rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+- name: Configuring Kibana repository
+  tags: kibana_centos
+  copy:
+    src: kibana.repo
+    dest: /etc/yum.repos.d/kibana.repo
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Installing Kibana
+  tags: kibana_centos
+  yum:
+    name: kibana
+    state: latest
+
+- name: Configuring firewall for Kibana
+  tags: kibana_centos, elk_install
+  shell: |
+    sudo firewall-cmd --permanent --zone=public --add-port=5601/tcp
+    sleep 10
+    sudo firewall-cmd --reload
+
+- name: Managing Kibana service
+  tags: kibana_centos, elk_service, kibana_service, service
+  service:
+    name: kibana
+    state: restarted
+    enabled: true

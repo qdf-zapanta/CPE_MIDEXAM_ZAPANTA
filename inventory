@@ -1,0 +1,20 @@
+[nagios_centos]
+192.168.56.117 ansible_user=dzapanta
+
+[elk_centos]
+192.168.56.117 ansible_user=dzapanta
+
+[elk_ubuntu]
+127.0.0.1 ansible_user=dave
+
+[igp_centos]
+192.168.56.117 ansible_user=dzapanta
+
+[igp_ubuntu]
+127.0.0.1 ansible_user=dave
+
+[ls_centos]
+192.168.56.117 ansible_user=dzapanta
+
+[ls_ubuntu]
+127.0.0.1 ansible_user=dave
